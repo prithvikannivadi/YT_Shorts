@@ -1,0 +1,10 @@
+# credentials - never commit these
+client_secret.json
+token.json
+.env
+
+# generated content
+assets/
+output/
+__pycache__/
+*.pyc

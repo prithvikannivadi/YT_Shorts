@@ -1,0 +1,86 @@
+# ============================================================
+# YouTube Shorts Reddit Bot - configuration
+# ============================================================
+
+reddit:
+  user_agent: "shorts-bot/1.0 (by u/your_reddit_username)"
+  # Each source is tried in order of the best-scoring unposted story across all of them.
+  # mode: "selftext" narrates the post body; "comments" narrates top comments (for AskReddit).
+  subreddits:
+    - name: AmItheAsshole
+      mode: selftext
+      emoji: "🍿"
+      cta: "So... am I the jerk here? Let me know in the comments."
+    - name: tifu
+      mode: selftext
+      emoji: "💀"
+      cta: "Follow for more stories like this one."
+    - name: confession
+      mode: selftext
+      emoji: "🤫"
+      cta: "Would you have done the same? Comment below."
+    - name: pettyrevenge
+      mode: selftext
+      emoji: "😈"
+      cta: "Follow for more revenge stories."
+    - name: AskReddit
+      mode: comments
+      emoji: "🧠"
+      cta: "Which one surprised you? Follow for part two tomorrow."
+  time_filter: day        # top-of-<day> posts
+  posts_per_subreddit: 25
+  min_score: 500          # minimum upvotes to consider
+  skip_nsfw: true
+  min_words: 80           # skip stories that are too short to narrate
+  comments_per_post: 5    # for "comments" mode
+  comment_max_chars: 400
+
+script:
+  words_per_second: 2.8   # approx narration speed at the TTS rate below
+  max_seconds: 58         # keep each video under the Shorts limit
+  min_seconds: 20
+  max_parts: 3            # split long stories into up to N parts (posted on later runs)
+  soften_profanity: true  # replace demonetization-risk words
+
+tts:
+  # Any voice from `edge-tts --list-voices`. One is picked per story and kept across parts.
+  voices:
+    - en-US-ChristopherNeural
+    - en-US-GuyNeural
+    - en-US-JennyNeural
+  rate: "+12%"            # slight speed-up, standard for viral shorts
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  font: "DejaVu Sans"
+  caption_font_size: 104
+  caption_words_per_chunk: 2   # word-pop caption chunk size
+  highlight_every: 5           # every Nth caption chunk is highlighted yellow
+
+background:
+  # Paste URLs of gameplay videos that are EXPLICITLY copyright-free / free-to-use
+  # (see SETUP.md for how to find and verify them). The bot downloads each once,
+  # caches it, and slices a random segment per short.
+  sources: []
+  #  - "https://www.youtube.com/watch?v=XXXXXXXXXXX"   # e.g. no-copyright Minecraft parkour
+  #  - "https://www.youtube.com/watch?v=YYYYYYYYYYY"   # e.g. no-copyright satisfying loops
+  # If the library is empty, a procedurally generated gradient background is used
+  # as a fallback so the pipeline never fails.
+
+upload:
+  enabled: true
+  privacy: public          # NOTE: stays "private (locked)" until your API project passes
+                           # YouTube's audit - see SETUP.md step 3.
+  category_id: "24"        # Entertainment
+  tags: [reddit, reddit stories, storytime, shorts, aita, askreddit, tifu]
+  description_extra: |
+    Follow for daily Reddit stories! 🍿
+
+    #shorts #reddit #redditstories #storytime
+
+paths:
+  data: data               # state (posted history, queued parts) - committed by CI
+  assets: assets           # downloaded background library - cached by CI
+  output: output           # rendered videos
