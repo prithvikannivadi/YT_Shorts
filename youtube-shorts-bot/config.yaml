@@ -1,6 +1,26 @@
 # ============================================================
-# YouTube Shorts Reddit Bot - configuration
+# YouTube Shorts Bot - REDDIT channel configuration
 # ============================================================
+# One config file per channel (config.yaml = reddit, config.finance.yaml, etc).
+# Select at runtime:  python -m bot.main run --config config.finance.yaml
+
+channel:
+  name: reddit
+  # Background source for this channel:
+  #   "gameplay" -> a random slice of the downloaded copyright-free gameplay
+  #                 library below. ONLY the Reddit channel uses gameplay.
+  #   "source"   -> the content's own original video (outdoor & finance).
+  background_mode: gameplay
+
+hook:
+  # "card"    -> the Reddit title card IS the hook (this channel).
+  # "overlay" -> a big curiosity-gap text hook burned on the opening frames,
+  #              plus the narration is front-loaded to speak it first
+  #              (outdoor & finance channels - drives 'stayed to watch').
+  style: card
+  hold_seconds: 2.6   # min time the hook overlay holds (overlay style only)
+  max_words: 12       # keep the hook punchy
+  font_size: 118
 
 reddit:
   user_agent: "shorts-bot/1.0 (by u/your_reddit_username)"

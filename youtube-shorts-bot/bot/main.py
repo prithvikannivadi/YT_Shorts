@@ -14,7 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import background, captions, render, script, state, title_card, tts
+from . import background, captions, hook, render, script, state, title_card, tts
 from .config import load_config
 
 log = logging.getLogger("bot")
@@ -22,7 +22,8 @@ log = logging.getLogger("bot")
 
 def _slug(segment: dict) -> str:
     base = re.sub(r"[^a-z0-9]+", "-", segment["title"].lower()).strip("-")[:50]
-    return f"{segment['post_id']}-p{segment['part']}-{base}"
+    ident = segment.get("post_id") or segment.get("id") or "item"
+    return f"{ident}-p{segment.get('part', 1)}-{base}"
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -57,6 +58,20 @@ def cmd_run(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{_slug(segment)}.mp4"
 
+    # Hook style: "card" (Reddit title card is the hook) or "overlay" (a
+    # curiosity-gap text hook, used by the outdoor & finance channels).
+    hook_cfg = cfg.get("hook") or {}
+    style = hook_cfg.get("style", "card")
+
+    # The opener is spoken FIRST and shown on-screen; captions skip those words
+    # while the overlay holds. This unifies Reddit's card and the hook overlay.
+    if style == "overlay":
+        hook_line = hook.make_hook(segment["title"], segment.get("hook_text"), cfg)
+        spoken = hook.spoken_opener(hook_line)
+        segment["narration"] = hook.ensure_opens_with(segment["narration"], spoken)
+    else:
+        spoken = segment["spoken_title"]
+
     with tempfile.TemporaryDirectory() as td:
         work = Path(td)
 
@@ -71,27 +86,34 @@ def cmd_run(args: argparse.Namespace) -> int:
         if duration > max_s + 5:
             log.warning("narration %.1fs overshot the %ds budget", duration, max_s)
 
-        # 2. Captions (skip the words shown on the title card)
-        n_title_words = len(segment["spoken_title"].split())
-        card_until = (
-            words[n_title_words - 1]["end"] + 0.15
-            if n_title_words <= len(words) else 3.0
+        # 2. Opening overlay + how long it holds (until the spoken hook ends)
+        n_open = len(spoken.split())
+        overlay_until = (
+            words[n_open - 1]["end"] + 0.2 if n_open <= len(words) else 3.0
         )
+        if style == "overlay":
+            overlay_until = max(overlay_until, float(hook_cfg.get("hold_seconds", 2.6)))
+            overlay_path = work / "hook.png"
+            hook.render_hook(hook_line, overlay_path, cfg)
+            overlay_fullframe, overlay_y = True, 0.30
+        else:
+            overlay_path = work / "card.png"
+            title_card.render_title_card(segment, overlay_path)
+            overlay_fullframe, overlay_y = False, 0.16
+
+        # 3. Captions (skip the words shown on the opening overlay)
         ass_path = work / "captions.ass"
         captions.write_ass(
-            words, ass_path, cfg, skip_first_words=n_title_words, audio_end=duration
+            words, ass_path, cfg, skip_first_words=n_open, audio_end=duration
         )
 
-        # 3. Title card overlay
-        card_path = work / "card.png"
-        title_card.render_title_card(segment, card_path)
-
-        # 4. Background slice + final render
-        background.ensure_library(cfg)
-        bg_clip, bg_start = background.pick_clip(cfg, duration + 1.5)
+        # 4. Channel-aware background + final render. Reddit -> gameplay library;
+        #    outdoor/finance -> the content's own original source video.
+        bg_clip, bg_start = background.pick_background(cfg, segment, duration + 1.5)
         render.render(
-            cfg, bg_clip, bg_start, audio_path, ass_path, card_path,
-            card_until, out_path,
+            cfg, bg_clip, bg_start, audio_path, ass_path, out_path,
+            overlay_path=overlay_path, overlay_until=overlay_until,
+            overlay_fullframe=overlay_fullframe, overlay_y_frac=overlay_y,
         )
 
     log.info("rendered %s (%.1fs)", out_path, duration)
