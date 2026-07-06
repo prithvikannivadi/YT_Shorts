@@ -1,0 +1,80 @@
+# ============================================================
+# YouTube Shorts Bot - OUTDOOR channel (example)
+# ============================================================
+# Copy to config.outdoor.yaml and run:
+#   python -m bot.main run --config config.outdoor.yaml
+#
+# The outdoor clip IS the content, so it can't be swapped for stock. The fetcher
+# therefore pulls ONLY reuse-licensed (Creative Commons / public domain) footage
+# and every upload credits the original creator (attribution below).
+
+channel:
+  name: outdoor
+  type: outdoor
+  # SOURCE mode: the background is the content's own original video, supplied by
+  # source_fetcher on the segment as `background_source`.
+  background_mode: source
+
+hook:
+  style: overlay
+  hold_seconds: 2.6
+  max_words: 10
+  font_size: 112
+
+# source_fetcher searches these, keeps only reuse-licensed videos, downloads one.
+source:
+  queries:
+    - "wildlife encounter creative commons"
+    - "fishing catch no copyright reuse allowed"
+    - "trail camera animals creative commons"
+  min_duration: 30
+  max_duration: 1200
+
+background:
+  source_start: 0.0
+
+# REQUIRED for this channel: credit satisfies CC-BY and is good etiquette.
+# (A credit alone does NOT grant rights to non-CC footage - the fetcher's
+# license filter is what keeps you legal; see CHANNELS.md.)
+attribution:
+  enabled: true
+  template: |
+    🎥 Original clip: {source_url}
+    Credit: {source_author} ({source_license})
+
+script:
+  words_per_second: 2.8
+  max_seconds: 58
+  min_seconds: 20
+  max_parts: 1
+  soften_profanity: true
+
+tts:
+  voices:
+    - en-US-ChristopherNeural
+    - en-US-GuyNeural
+  rate: "+10%"
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  font: "DejaVu Sans"
+  caption_font_size: 104
+  caption_words_per_chunk: 2
+  highlight_every: 5
+
+upload:
+  enabled: true
+  privacy: public
+  category_id: "15"     # Pets & Animals (or 19 Travel & Events)
+  tags: [outdoors, wildlife, nature, fishing, shorts, animals]
+  description_extra: |
+    Follow for daily wild moments. 🌲
+
+    #shorts #wildlife #nature #outdoors
+
+paths:
+  data: data_outdoor
+  assets: assets
+  output: output

@@ -38,19 +38,32 @@ def _credentials() -> Credentials:
 
 
 def build_metadata(segment: dict, cfg) -> tuple[str, str]:
-    title = f"{segment['emoji']} {segment['title']}"
-    if segment["total_parts"] > 1:
-        title = f"{title} | Part {segment['part']}"
+    emoji = segment.get("emoji", "")
+    title = f"{emoji} {segment['title']}".strip()
+    if segment.get("total_parts", 1) > 1:
+        title = f"{title} | Part {segment.get('part', 1)}"
     if len(title) > 96:
         title = title[:93].rsplit(" ", 1)[0] + "..."
     title += " #shorts"
 
-    description = (
-        f"{segment['title']}\n\n"
-        f"Story from r/{segment['subreddit']}.\n"
-        f"{cfg.upload.description_extra}"
-    )
-    return title, description
+    lines = [segment["title"], ""]
+    if segment.get("subreddit"):  # reddit channel only
+        lines.append(f"Story from r/{segment['subreddit']}.")
+    lines.append(cfg.upload.description_extra)
+
+    # Auto-attribution: credit the original creator for source-footage channels.
+    attr = cfg.get("attribution") or {}
+    if attr.get("enabled") and segment.get("source_url"):
+        template = attr.get(
+            "template", "Clip: {source_url}\nCredit: {source_author}"
+        )
+        lines += ["", template.format(
+            source_url=segment.get("source_url", ""),
+            source_author=segment.get("source_author", ""),
+            source_license=segment.get("source_license", ""),
+        ).strip()]
+
+    return title, "\n".join(lines).strip()
 
 
 def upload(video_path: Path, segment: dict, cfg) -> str:

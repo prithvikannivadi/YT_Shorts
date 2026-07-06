@@ -6,6 +6,7 @@
 
 channel:
   name: reddit
+  type: reddit
   # Background source for this channel:
   #   "gameplay" -> a random slice of the downloaded copyright-free gameplay
   #                 library below. ONLY the Reddit channel uses gameplay.

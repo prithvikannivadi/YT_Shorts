@@ -11,6 +11,7 @@ import json
 import logging
 import random
 import subprocess
+import tempfile
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -89,16 +90,26 @@ def pick_clip(cfg, duration_needed: float) -> tuple[Path, float]:
     return _ensure_fallback(lib), 0.0
 
 
-def pick_background(cfg, segment: dict, duration_needed: float) -> tuple[Path, float]:
+def pick_background(
+    cfg, segment: dict, duration_needed: float, work_dir: Path | None = None
+) -> tuple[Path, float]:
     """Channel-aware background selection.
 
     - background_mode "gameplay" (Reddit channel only): a random slice of the
       downloaded copyright-free gameplay library.
-    - background_mode "source"   (outdoor & finance channels): the content's OWN
-      original video, supplied by that channel's fetcher as
-      segment["background_source"]. Gameplay is never used for these channels.
+    - background_mode "dataviz"  (finance): a fully generated animated chart of
+      the script's numbers. No source video, no copyright/attribution.
+    - background_mode "source"   (outdoor): the content's OWN original video,
+      supplied by the fetcher as segment["background_source"].
     """
     mode = (cfg.get("channel") or {}).get("background_mode", "gameplay")
+
+    if mode == "dataviz":
+        from . import dataviz
+
+        out = (work_dir or Path(tempfile.mkdtemp())) / "dataviz_bg.mp4"
+        dataviz.generate(cfg, segment, duration_needed, out)
+        return out, 0.0
 
     if mode == "source":
         src = segment.get("background_source")

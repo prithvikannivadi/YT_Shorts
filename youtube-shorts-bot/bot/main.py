@@ -30,6 +30,17 @@ def cmd_run(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     st = state.State(cfg.paths.data)
 
+    ctype = (cfg.get("channel") or {}).get("type", "reddit")
+    if ctype != "reddit":
+        # This repo ships the Reddit content pipeline plus the shared components
+        # every channel reuses: dataviz backgrounds, source_fetcher + licensing,
+        # the hook engine, and description attribution. The finance/outdoor
+        # channels plug their own fetcher/script into those - see CHANNELS.md.
+        raise SystemExit(
+            f"channel type {ctype!r}: wire this channel's fetcher + script step "
+            f"here before running it (the {ctype} components are ready to import)."
+        )
+
     # Queued part from an earlier multi-part story takes priority.
     segment = st.pop_pending_part()
     if segment is None:
@@ -109,7 +120,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 
         # 4. Channel-aware background + final render. Reddit -> gameplay library;
         #    outdoor/finance -> the content's own original source video.
-        bg_clip, bg_start = background.pick_background(cfg, segment, duration + 1.5)
+        bg_clip, bg_start = background.pick_background(
+            cfg, segment, duration + 1.5, work_dir=work
+        )
         render.render(
             cfg, bg_clip, bg_start, audio_path, ass_path, out_path,
             overlay_path=overlay_path, overlay_until=overlay_until,

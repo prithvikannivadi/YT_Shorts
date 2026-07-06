@@ -7,10 +7,12 @@
 
 channel:
   name: finance
-  # SOURCE mode: the background is the content's OWN original video, supplied by
-  # this channel's fetcher on the segment as `background_source`. Gameplay is
-  # NEVER used here - that's exclusive to the Reddit channel.
-  background_mode: source
+  type: finance
+  # DATAVIZ mode: the background is a fully GENERATED animated chart of the
+  # numbers in the script (ticking hero figure + growing bars on a dark grid).
+  # Zero copyright risk, no source video, no attribution needed - and it fixes
+  # the visual/content match that was hurting retention.
+  background_mode: dataviz
 
 hook:
   style: overlay        # curiosity-gap text hook on the opening frames
@@ -18,18 +20,9 @@ hook:
   max_words: 10         # punchier than Reddit; fewer words = bigger, faster read
   font_size: 112
 
-background:
-  source_start: 0.0     # where to start inside the source clip (fetcher usually
-                        # trims to the relevant moment, so 0.0 is the default)
-
-# Optional: credit the original creator in every description (see CHANNELS.md
-# for why this matters for copyright/monetization). The fetcher should set
-# segment["source_url"] / segment["source_author"]; leave the template here.
+# Data-viz is fully original, so no attribution is required for finance.
 attribution:
-  enabled: true
-  template: |
-    Clip: {source_url}
-    Credit: {source_author}
+  enabled: false
 
 script:
   words_per_second: 2.8
