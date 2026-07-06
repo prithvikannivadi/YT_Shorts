@@ -113,15 +113,18 @@ def _ease_out(x: float) -> float:
 
 
 def _base_frame(w: int, h: int) -> Image.Image:
-    img = Image.new("RGB", (w, h))
-    px = img.load()
+    # Build the vertical gradient as a 1px-wide column (h iterations) and stretch
+    # it to full width - avoids a w*h per-pixel Python loop (2M+ iterations).
+    col = Image.new("RGB", (1, h))
+    cpx = col.load()
     for y in range(h):
         t = y / h
-        r = int(BG_TOP[0] + (BG_BOTTOM[0] - BG_TOP[0]) * t)
-        g = int(BG_TOP[1] + (BG_BOTTOM[1] - BG_TOP[1]) * t)
-        b = int(BG_TOP[2] + (BG_BOTTOM[2] - BG_TOP[2]) * t)
-        for x in range(w):
-            px[x, y] = (r, g, b)
+        cpx[0, y] = (
+            int(BG_TOP[0] + (BG_BOTTOM[0] - BG_TOP[0]) * t),
+            int(BG_TOP[1] + (BG_BOTTOM[1] - BG_TOP[1]) * t),
+            int(BG_TOP[2] + (BG_BOTTOM[2] - BG_TOP[2]) * t),
+        )
+    img = col.resize((w, h))
     d = ImageDraw.Draw(img)
     step = 90
     for gx in range(0, w, step):
