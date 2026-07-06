@@ -80,6 +80,31 @@ The workflow downloads each video once and caches the library between runs.
 If the list is empty the bot renders over a generated gradient background so
 nothing breaks — but real gameplay footage performs far better.
 
+## 3b. Finance & outdoor channels (multi-channel)
+
+The bot runs three channels off one codebase (`config.yaml` = reddit,
+`config.finance.yaml`, `config.outdoor.yaml`). See **[CHANNELS.md](CHANNELS.md)**
+for how they differ. Extra setup for the two AI-scripted channels:
+
+1. **Claude API key** — finance and outdoor write their scripts with the Claude
+   API. Get a key at <https://console.anthropic.com>, then add a GitHub secret
+   `ANTHROPIC_API_KEY`. (Reddit doesn't need it.)
+2. **A YouTube token per channel** — each channel posts to a *different* YouTube
+   account, so each needs its own OAuth token (repeat step 2 above once per
+   channel, logging into that channel's Google account):
+   - `YT_TOKEN_JSON_REDDIT`
+   - `YT_TOKEN_JSON_FINANCE`
+   - `YT_TOKEN_JSON_OUTDOOR`
+3. **Outdoor footage is auto-sourced** — `config.outdoor.yaml` lists search
+   queries; the bot pulls only Creative Commons clips and credits the creator.
+   Tune the `source.queries` to your niche.
+4. **Finance needs no footage** — it generates an animated data-viz background
+   from the numbers in each script. Add/adjust `finance.topics` so it doesn't
+   repeat.
+
+Any channel whose config file or secret is missing is skipped cleanly — so you
+can turn them on one at a time.
+
 ## 4. Turn it on
 
 1. Push/merge this project to the repo's **default branch** (scheduled

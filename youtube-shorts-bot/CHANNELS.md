@@ -10,24 +10,33 @@ python -m bot.main run --config config.finance.yaml     # finance
 python -m bot.main run --config config.outdoor.yaml     # outdoor
 ```
 
+## Content source per channel
+
+| Channel | Content fetcher | Script | Background |
+|---------|-----------------|--------|------------|
+| reddit  | `reddit_fetcher` (Reddit API) | cleaned post text | gameplay library |
+| finance | `finance_fetcher` (topic pool) | **Claude API** (`scriptgen`) | generated **data-viz** |
+| outdoor | `outdoor_fetcher` (`source_fetcher`, CC-only) | **Claude API** (`scriptgen`) | the sourced **original clip** |
+
+`main._fetch_segments()` dispatches on `channel.type`. Finance and outdoor need
+`ANTHROPIC_API_KEY` (script generation); reddit does not.
+
 ## Background source is channel-specific (verified)
 
-This is enforced in `background.pick_background()` via `channel.background_mode`:
+Enforced in `background.pick_background()` via `channel.background_mode`:
 
 | Channel  | `background_mode` | Background that gets used                          |
 |----------|-------------------|----------------------------------------------------|
 | reddit   | `gameplay`        | random slice of the downloaded gameplay library    |
-| finance  | `source`          | the content's **own original source video**        |
+| finance  | `dataviz`         | a **generated** animated chart of the script's numbers |
 | outdoor  | `source`          | the content's **own original source video**        |
 
-**Gameplay footage is used ONLY by the Reddit channel.** For `source` channels
-the fetcher must put the original video on each segment as
-`segment["background_source"]` (a local path to the downloaded clip); the
-pipeline uses that directly and never touches the gameplay library.
+**Gameplay footage is used ONLY by the Reddit channel.** Finance never uses a
+source video (zero copyright risk); outdoor's fetcher puts the CC-licensed clip
+on `segment["background_source"]` and the pipeline uses it directly.
 
-Verified by rendering one short per mode and confirming the background: Reddit →
-gameplay, finance → its source clip. See the render logs (`background: original
-source video ...` vs the gameplay path).
+Verified end-to-end: reddit renders gameplay+card, finance renders data-viz+hook
+from an LLM script, outdoor renders source-clip+hook with attribution.
 
 ## Hook style is channel-specific
 

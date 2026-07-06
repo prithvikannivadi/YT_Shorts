@@ -20,6 +20,27 @@ from .config import load_config
 log = logging.getLogger("bot")
 
 
+def _fetch_segments(ctype: str, cfg, st) -> tuple[list[dict], str] | None:
+    """Dispatch to the channel's content provider. Each returns
+    ([segment, ...], posted_id) or None when there's nothing to post."""
+    if ctype == "reddit":
+        from .reddit_fetcher import fetch_best_post
+
+        post = fetch_best_post(cfg, st.posted_ids)
+        if post is None:
+            return None
+        return script.build_segments(post, cfg), post["id"]
+    if ctype == "finance":
+        from . import finance_fetcher
+
+        return finance_fetcher.fetch(cfg, st)
+    if ctype == "outdoor":
+        from . import outdoor_fetcher
+
+        return outdoor_fetcher.fetch(cfg, st)
+    raise SystemExit(f"unknown channel type {ctype!r} (expected reddit/finance/outdoor)")
+
+
 def _slug(segment: dict) -> str:
     base = re.sub(r"[^a-z0-9]+", "-", segment["title"].lower()).strip("-")[:50]
     ident = segment.get("post_id") or segment.get("id") or "item"
@@ -31,38 +52,28 @@ def cmd_run(args: argparse.Namespace) -> int:
     st = state.State(cfg.paths.data)
 
     ctype = (cfg.get("channel") or {}).get("type", "reddit")
-    if ctype != "reddit":
-        # This repo ships the Reddit content pipeline plus the shared components
-        # every channel reuses: dataviz backgrounds, source_fetcher + licensing,
-        # the hook engine, and description attribution. The finance/outdoor
-        # channels plug their own fetcher/script into those - see CHANNELS.md.
-        raise SystemExit(
-            f"channel type {ctype!r}: wire this channel's fetcher + script step "
-            f"here before running it (the {ctype} components are ready to import)."
-        )
 
     # Queued part from an earlier multi-part story takes priority.
     segment = st.pop_pending_part()
     if segment is None:
-        from .reddit_fetcher import fetch_best_post
-
-        post = fetch_best_post(cfg, st.posted_ids)
-        if post is None:
-            log.info("no eligible story found today - nothing to do")
+        result = _fetch_segments(ctype, cfg, st)
+        if result is None:
+            log.info("no eligible content for channel %r - nothing to do", ctype)
             st.save()
             return 0
-        segments = script.build_segments(post, cfg)
+        segments, posted_id = result
         voice = random.choice(list(cfg.tts.voices))
         for s in segments:
             s["voice"] = voice
         segment = segments[0]
         st.queue_parts(segments[1:])
-        st.mark_posted(post["id"])
+        st.mark_posted(posted_id)
 
+    src = f"r/{segment['subreddit']}" if segment.get("subreddit") else ctype
     log.info(
-        "story: r/%s '%s' (part %d/%d)",
-        segment["subreddit"], segment["title"][:60],
-        segment["part"], segment["total_parts"],
+        "content: %s '%s' (part %d/%d)",
+        src, segment["title"][:60],
+        segment.get("part", 1), segment.get("total_parts", 1),
     )
 
     out_dir = Path(cfg.paths.output)
