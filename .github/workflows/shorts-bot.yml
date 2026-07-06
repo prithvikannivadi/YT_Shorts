@@ -54,7 +54,17 @@ jobs:
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           YT_TOKEN_JSON: ${{ secrets.YT_TOKEN_JSON }}
         run: |
+          # Skip cleanly (no red failure) until the Reddit API secrets are set.
+          if [ -z "$REDDIT_CLIENT_ID" ] || [ -z "$REDDIT_CLIENT_SECRET" ]; then
+            echo "::warning title=Secrets missing::REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set - skipping. Add them in Settings > Secrets and variables > Actions (see SETUP.md)."
+            exit 0
+          fi
           FLAGS=""
+          # No YouTube token yet -> render only, keep the video as an artifact.
+          if [ -z "$YT_TOKEN_JSON" ]; then
+            echo "::warning title=No upload token::YT_TOKEN_JSON not set - rendering only. Download the video from this run's artifacts."
+            FLAGS="--no-upload"
+          fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.upload }}" = "false" ]; then
             FLAGS="--no-upload"
           fi
