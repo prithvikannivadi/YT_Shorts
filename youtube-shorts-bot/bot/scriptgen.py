@@ -40,6 +40,20 @@ _SYSTEM = {
         "clickbait lies. 'hook' is the spoken opener, <=10 words, the shock. "
         "'narration' is the full spoken script and MUST begin with the hook sentence."
     ),
+    "story": (
+        "You write ORIGINAL first-person drama stories for a faceless YouTube Shorts "
+        "storytime channel, in the style of viral internet story posts (moral "
+        "dilemmas, petty revenge, wild confessions, workplace drama). The story is "
+        "fiction you invent - never present it as a real post from a real platform. "
+        "Rules: first-person voice, casual and specific (ages, small money amounts, "
+        "petty details make it feel real). Open with the juiciest sentence of the "
+        "whole story. Build one clear conflict, land one satisfying turn. Keep it "
+        "monetization-safe: no slurs, no graphic content; mild conflict words are "
+        "fine. 'title' is the story's one-line premise as a question or bold claim, "
+        "<=70 chars. 'hook' is the spoken opener, <=12 words. 'narration' is the "
+        "full spoken story and MUST begin with the hook sentence and end with a "
+        "one-line question to the audience."
+    ),
     "outdoor": (
         "You write scripts for a faceless outdoors/wildlife YouTube Shorts channel. "
         "You are given the title and description of a real video clip. Write a vivid, "
